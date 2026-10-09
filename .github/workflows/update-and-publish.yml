@@ -4,9 +4,13 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: '21 9 * * 1-5'
+    # 5-minute spacing; GitHub can still delay or skip scheduled jobs
+    - cron: '19,24,29 9 * * 1-5'
       timezone: 'America/New_York'
-    - cron: '26 9 * * 1-5'
+    # Allow delayed publication of the S&P500 index open
+    - cron: '11,26 10 * * 1-5'
+      timezone: 'America/New_York'
+    - cron: '16 11 * * 1-5'
       timezone: 'America/New_York'
 permissions:
   contents: write
@@ -29,23 +33,25 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r requirements.txt
-      - name: Check model behavior
+      - name: Test preopen forecast and verification
         run: python -m unittest discover -s tests -v
-      - name: Update when market is about to open
+      - name: Compute ES direction only before opening
         run: python scripts/update_signal.py
-      - name: Save derived public signal
+      - name: Grade existing saved forecast only after opening
+        run: python scripts/verify_open.py
+      - name: Save public prediction and verification
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/latest.json data/history.json
+          git add data/latest.json data/history.json data/verification.json
           if ! git diff --cached --quiet; then
-            git commit -m 'Refresh premarket ES signal'
+            git commit -m 'Update ES forecast and opening gap verification'
             git push
           fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
-      - name: Deploy iPhone web app
+      - name: Deploy iPhone app
         id: deployment
         uses: actions/deploy-pages@v4
