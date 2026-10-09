@@ -49,6 +49,17 @@ hr{height:1px;background:var(--line);border:0;margin:20px 0}.history{display:fle
 <button class="secondary" id="autoReload" type="button">最新データを読み直す</button>
 <p class="hint">GitHub Actionsの遅延や価格データの欠損がある場合は「判定保留」。下の手入力機能はこれまで通り使えます。</p>
 </section>
+<section class="card" id="autoVerification" aria-live="polite">
+<div class="srow"><h2>自動答え合わせ</h2><span class="badge safe">寄り付き後に更新</span></div>
+<div class="auto-box">
+  <div class="auto-head" id="verifyVerdict">取得待ち</div>
+  <p class="auto-sub" id="verifyDate">実際のS&P500始値を確認しています</p>
+  <p class="auto-sub" id="verifyGap">—</p>
+</div>
+<p class="hint" id="verifyNote">始値が確定して取得できた場合にだけ、保存済みの予測を採点します。原則として米国東部時間10:00以降に照合します。</p>
+<div class="srow"><strong class="minor">累積的中率（自動採点分）</strong><strong id="autoStats">記録なし</strong></div>
+<button class="secondary" type="button" id="verifyReload">答え合わせを読み直す</button>
+</section>
 <section class="card">
 <div class="srow"><h2>① 予測に使う価格</h2><span class="badge safe">計算は端末内</span></div>
 <div class="field"><label for="day">予測対象の米国市場の日付</label><input type="date" id="day"></div>
@@ -142,6 +153,51 @@ hr{height:1px;background:var(--line);border:0;margin:20px 0}.history{display:fle
  }
  document.getElementById('autoReload').addEventListener('click',updateForecast);
  updateForecast();
+
+ async function updateVerification(){
+  document.getElementById('verifyNote').textContent='保存された予測と実際の始値を照合しています…';
+  try{
+   const stamp='?v='+Date.now();
+   const [vr,hr]=await Promise.all([
+      fetch('./data/verification.json'+stamp,{cache:'no-store'}),
+      fetch('./data/history.json'+stamp,{cache:'no-store'})
+   ]);
+   if(!vr.ok)throw new Error('verification: '+vr.status);
+   const v=await vr.json();
+   const history=hr.ok?await hr.json():[];
+   if(v.status==='verified' && typeof v.actual_gap_pct==='number'){
+     const previous=v.signal_direction==='up'?'上昇':v.signal_direction==='down'?'下落':'保留';
+     const actual=v.actual_direction==='up'?'上昇':v.actual_direction==='down'?'下落':'横ばい';
+     const head=document.getElementById('verifyVerdict');
+     head.textContent=v.correct?'的中':'不的中';
+     head.className='auto-head '+(v.correct?'up':'down');
+     document.getElementById('verifyDate').textContent='採点日 '+v.date+' ／ 予測 '+previous+' ／ 実際 '+actual;
+     const p=Number(v.actual_gap_pct);
+     document.getElementById('verifyGap').textContent='S&P500寄り付き '+(p>=0?'+':'')+p.toFixed(3)+'%';
+     document.getElementById('verifyNote').textContent=
+       '前営業日終値 '+Number(v.previous_close).toLocaleString('ja-JP')+
+       ' ／ 当日始値 '+Number(v.spx_open).toLocaleString('ja-JP')+
+       '。指数の日足が更新されてから採点しました。';
+   }else{
+     document.getElementById('verifyVerdict').textContent='取得待ち';
+     document.getElementById('verifyVerdict').className='auto-head';
+     document.getElementById('verifyDate').textContent=v.date?'対象 '+v.date:'まだ自動採点がありません';
+     document.getElementById('verifyGap').textContent='—';
+     document.getElementById('verifyNote').textContent=v.reason||'米国市場の寄り付きとデータ反映を待っています。';
+   }
+   const scored=Array.isArray(history)?history.filter(x=>x.correct===true||x.correct===false):[];
+   const wins=scored.filter(x=>x.correct===true).length;
+   document.getElementById('autoStats').textContent=
+      scored.length?wins+' / '+scored.length+'日（'+(wins/scored.length*100).toFixed(1)+'%）':'記録なし';
+  }catch(e){
+   document.getElementById('verifyVerdict').textContent='取得できません';
+   document.getElementById('verifyDate').textContent='公開データの取得失敗';
+   document.getElementById('verifyNote').textContent='後ほど「読み直す」を押してください。';
+  }
+ }
+ document.getElementById('verifyReload').addEventListener('click',updateVerification);
+ updateVerification();
+
 
  const STORAGE_KEY='es_open_signal_iphone_v1';
  let mode='delayed';
