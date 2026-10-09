@@ -1,1 +1,14 @@
-{"status":"pending","reason":"寄り付き後に自動答え合わせを開始します","date":null}
+{
+  "date": "2026-10-09",
+  "status": "verified",
+  "model": "ES_overnight_direction_5m_delayed_v1",
+  "signal_direction": "up",
+  "source": "Yahoo Finance ^GSPC daily OHLC (unofficial, delayed)",
+  "previous_session": "2026-10-08",
+  "previous_close": 7765.3599,
+  "spx_open": 7786.3599,
+  "actual_direction": "up",
+  "actual_gap_pct": 0.27043,
+  "correct": true,
+  "verified_at_utc": "2026-10-09T19:31:47.812191+00:00"
+}
