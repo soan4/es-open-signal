@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "date": "2026-10-09",
+    "direction": "up",
+    "change_pct": 0.3134,
+    "calculated_at_utc": "2026-10-09T13:28:42.269792+00:00",
+    "signal_bar_end_et": "2026-10-09 09:10 ET"
+  }
+]
