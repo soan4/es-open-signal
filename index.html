@@ -22,6 +22,15 @@ input,select{display:block;width:100%;padding:12px 13px;min-height:49px;font-siz
 button{font-family:inherit;cursor:pointer}button.primary,button.secondary,button.quiet{width:100%;min-height:48px;padding:11px;border-radius:12px;font-size:15px;font-weight:800;margin-top:10px}button.primary{color:#fff;background:#2257cd;border:1px solid #2257cd}button.secondary{color:var(--ink);background:var(--surface);border:1px solid var(--line)}button.quiet{color:var(--blue);background:transparent;border:0}button:disabled{opacity:.42;cursor:not-allowed}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px}.notice{border-left:3px solid #e3ad42;padding:7px 12px;background:var(--shade);font-size:.79rem;color:var(--muted);border-radius:4px 9px 9px 4px}
 hr{height:1px;background:var(--line);border:0;margin:20px 0}.history{display:flex;flex-direction:column;gap:9px;margin-top:12px}.item{border:1px solid var(--line);border-radius:12px;padding:11px 12px}.item small{color:var(--muted)}.ok{color:var(--mint);font-weight:800}.ng{color:var(--red);font-weight:800}.minor{font-size:.79rem;color:var(--muted)}a{color:var(--blue)}footer{padding:4px 3px;color:var(--muted);font-size:.75rem}summary{font-weight:750;cursor:pointer}details{margin-top:12px}.tiny{text-align:center;font-size:.72rem;color:var(--muted)}
+
+.auto-status {display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--muted)}
+.auto-ball{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.auto-ball.up{background:var(--mint)}.auto-ball.down{background:var(--red)}
+.auto-box{background:var(--shade);padding:17px 12px;text-align:center;border-radius:14px;margin:13px 0}
+.auto-head{font-size:1.9rem;letter-spacing:-.04em;font-weight:800}
+.auto-head.up{color:var(--mint)}.auto-head.down{color:var(--red)}
+.auto-sub{color:var(--muted);font-size:.81rem}
+
 </style>
 </head>
 <body>
@@ -29,8 +38,17 @@ hr{height:1px;background:var(--line);border:0;margin:20px 0}.history{display:fle
 <header>
 <div class="eyebrow">ES OPEN SIGNAL · MOBILE</div>
 <h1>S&P500 寄り付き予測</h1>
-<p>ES先物の価格を2つ入力するだけ。iPhoneで予測と答え合わせができます。</p>
+<p>公開ES先物データから自動判定。取得できない時は手動でも予測できます。</p>
 </header>
+
+<section class="card" aria-live="polite" id="autoForecast">
+<div class="srow"><h2>本日の自動予測</h2><span class="badge safe">無料・自動取得</span></div>
+<div class="auto-status"><span id="autoDot" class="auto-ball"></span><span id="autoStatus">最新の価格情報を確認しています…</span></div>
+<div class="auto-box"><div class="auto-head" id="autoDirection">—</div><p id="autoChange" class="auto-sub">更新情報を読み込み中</p><p id="autoTiming" class="auto-sub">—</p></div>
+<p class="hint" id="autoNote">米国株の寄り付き前にES先物だけで上昇・下落を判定します。</p>
+<button class="secondary" id="autoReload" type="button">最新データを読み直す</button>
+<p class="hint">GitHub Actionsの遅延や価格データの欠損がある場合は「判定保留」。下の手入力機能はこれまで通り使えます。</p>
+</section>
 <section class="card">
 <div class="srow"><h2>① 予測に使う価格</h2><span class="badge safe">計算は端末内</span></div>
 <div class="field"><label for="day">予測対象の米国市場の日付</label><input type="date" id="day"></div>
@@ -76,12 +94,55 @@ hr{height:1px;background:var(--line);border:0;margin:20px 0}.history{display:fle
 <p class="hint">米国夏時間の9:20は日本時間22:20、冬時間は23:20。無料価格の遅延は配信元次第で変わります。厳密なライブ価格を自動取得するアプリではありません。</p>
 </details>
 </section>
-<footer><strong>ES Open Signal for iPhone</strong> · オフライン計算対応。外部の解析サーバーに入力値を送信しません。市場価格は自動更新されません。</footer>
+<footer><strong>ES Open Signal for iPhone</strong> · オフライン計算対応。外部の解析サーバーに入力値を送信しません。自動予測は無料・非公式の遅延価格から取得します。</footer>
 </main>
 <script>
 'use strict';
 (function(){
  const $=id=>document.getElementById(id);
+
+ function todayNY(){
+  const ps=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+  const o={};for(const p of ps)o[p.type]=p.value;
+  return o.year+'-'+o.month+'-'+o.day;
+ }
+ function setForecast(label,info,when,note,dir){
+  document.getElementById('autoDirection').textContent=label;
+  document.getElementById('autoDirection').className='auto-head'+(dir==='up'?' up':dir==='down'?' down':'');
+  document.getElementById('autoDot').className='auto-ball'+(dir==='up'?' up':dir==='down'?' down':'');
+  document.getElementById('autoChange').textContent=info;
+  document.getElementById('autoTiming').textContent=when;
+  document.getElementById('autoNote').textContent=note;
+  document.getElementById('autoStatus').textContent=dir==='up'||dir==='down'?'寄り付き前の予測が更新されました':'自動判定の状態';
+ }
+ async function updateForecast(){
+  document.getElementById('autoStatus').textContent='最新の価格情報を確認しています…';
+  try{
+   const res=await fetch('./data/latest.json?v='+Date.now(),{cache:'no-store'});
+   if(!res.ok)throw new Error('HTTP '+res.status);
+   const obj=await res.json();
+   if(obj.status==='ready'&&obj.date===todayNY()){
+    const direction=obj.direction==='up'?'↗ 上昇予測':obj.direction==='down'?'↘ 下落予測':'→ 判定保留';
+    const pct=Number(obj.change_pct);
+    setForecast(direction,Number.isFinite(pct)?'ES変化率 '+(pct>=0?'+':'')+pct.toFixed(3)+'%':'変化率不明',
+      '米国市場 '+obj.date+' ／ 利用した足 '+(obj.signal_bar_end_et||'不明'),
+      'Yahoo Financeの遅延データから自動判定。今後の的中率を保証するものではありません。',obj.direction);
+   }else if(obj.status==='ready'){
+    setForecast('本日は未更新','前回の予測日：'+obj.date,'新しい予測データを待機中',
+      '以前の日の方向を今日の予測として表示しません。','none');
+   }else{
+    setForecast('判定保留',obj.reason||'寄り付き前のデータがまだありません',
+      obj.date?'対象：'+obj.date:'自動更新の準備中',
+      '寄り付き前に自動取得できない場合は、下の手入力画面を利用してください。','none');
+   }
+  }catch(e){
+   setForecast('取得できません','公開データに接続できません','—',
+     '通信を確認するか下の手入力画面をご利用ください。','none');
+  }
+ }
+ document.getElementById('autoReload').addEventListener('click',updateForecast);
+ updateForecast();
+
  const STORAGE_KEY='es_open_signal_iphone_v1';
  let mode='delayed';
  const num=(id)=>{const v=$(id).value.trim();if(!v)return null;const n=Number(v);return Number.isFinite(n)&&n>0?n:null};
