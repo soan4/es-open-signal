@@ -1,0 +1,7 @@
+{
+  "status": "setup_required",
+  "reason": "GitHub Actionsが寄り付き前に実行されると、自動予測を表示します。",
+  "date": null,
+  "source": "Yahoo Finance (unofficial, delayed)",
+  "model": "ES_overnight_direction_5m_delayed_v1"
+}
