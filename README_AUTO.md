@@ -1,0 +1,11 @@
+# ES寄り付き予測：iPhone自動版
+- ES=F の無料・非公式Yahoo Finance 5分足を米国東部9:21、9:26に確認します。
+- 前営業日15:55開始足の終値（16:00確定）と当日9:05開始足の終値（9:10確定）の方向を比較します。
+- 時刻付き価格が不足するときは判定を出しません。9:30を過ぎた後から予測を作ることもありません。
+- 米国祝日はNYSE休場判定を使用します。
+- 公開市場データの派生値だけをGitHub Pagesに配信します。個人的な手入力・端末内履歴はGitHubには送信されません。
+- GitHub Pages: Settings > Pages > Source = GitHub Actions に変更してください。
+- 最初の確認：Actions > ES signal and iPhone site > Run workflow を実行してください。時間外は公開のみ行います。
+- iPhone Safariで https://soan4.github.io/es-open-signal/ を開き、共有からホーム画面に追加します。
+- 価格配信は無料・非公式で取得保証なし。GitHub Actionsの実行遅延・停止も起こり得ます。
+- 公開リポジトリなので口座情報や個人情報は保存しないでください。
