@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ES寄り付き予測">
+<title>ES寄り付き予測 | iPhone</title>
+<style>
+:root { color-scheme: light dark; --bg:#f4f6fa; --surface:#fff; --ink:#101827; --muted:#617084; --line:#dfe5ed; --blue:#2057d4; --mint:#16835a; --red:#bf353f; --shade:#eef2f8; --shadow:0 9px 26px rgba(16,24,39,.055) }
+@media(prefers-color-scheme:dark){:root{--bg:#0c1320;--surface:#161f2d;--ink:#eef4fb;--muted:#a5b3c7;--line:#2d3b4d;--blue:#87adff;--mint:#64d9a7;--red:#ffa1ac;--shade:#202d3e;--shadow:none}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:540px;margin:auto;padding:18px 16px max(46px,env(safe-area-inset-bottom))}
+header{padding:14px 4px 12px}header .eyebrow{color:var(--blue);font-size:.76rem;font-weight:800;letter-spacing:.11em}h1{font-size:clamp(1.65rem,6.5vw,2.15rem);letter-spacing:-.035em;margin:.3rem 0 .2rem}h2{font-size:1.04rem;margin:0 0 14px}p{margin:.4rem 0;color:var(--muted)}.hint{font-size:.79rem}.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px 18px;margin:15px 0;box-shadow:var(--shadow)}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px}.badge{border-radius:999px;background:var(--shade);padding:4px 10px;color:var(--muted);font-size:.69rem;font-weight:700}.badge.safe{color:var(--mint)}
+.field{margin-bottom:16px}.field:last-child{margin-bottom:0}label{font-weight:700;font-size:.91rem;display:block;margin-bottom:6px}.sub{color:var(--muted);font-weight:400;font-size:.76rem;display:block}
+input,select{display:block;width:100%;padding:12px 13px;min-height:49px;font-size:19px;color:var(--ink);background:var(--surface);border:1.4px solid var(--line);border-radius:12px;outline:none}input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(82,131,246,.12)}input[type=date]{font-size:16px}
+.mode{display:grid;grid-template-columns:1fr 1fr;background:var(--shade);border-radius:13px;padding:4px;gap:4px;margin:10px 0 18px}.mode button{border:0;background:transparent;color:var(--muted);border-radius:10px;padding:11px 4px;font-size:.85rem;font-weight:700}.mode button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 6px rgba(0,0,0,.09)}
+.result{border-radius:16px;padding:17px;background:var(--shade);border:1px solid var(--line)}.result.up{background:color-mix(in srgb,var(--mint) 9%,var(--surface));border-color:color-mix(in srgb,var(--mint) 35%,var(--line))}.result.down{background:color-mix(in srgb,var(--red) 8%,var(--surface));border-color:color-mix(in srgb,var(--red) 30%,var(--line))}.result .direction{font-size:1.75rem;font-weight:850;letter-spacing:-.04em;margin:4px 0}.result.up .direction{color:var(--mint)}.result.down .direction{color:var(--red)}.metric{font-size:1.0rem;font-weight:700}.result p{font-size:.79rem;margin:6px 0 0}
+button{font-family:inherit;cursor:pointer}button.primary,button.secondary,button.quiet{width:100%;min-height:48px;padding:11px;border-radius:12px;font-size:15px;font-weight:800;margin-top:10px}button.primary{color:#fff;background:#2257cd;border:1px solid #2257cd}button.secondary{color:var(--ink);background:var(--surface);border:1px solid var(--line)}button.quiet{color:var(--blue);background:transparent;border:0}button:disabled{opacity:.42;cursor:not-allowed}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px}.notice{border-left:3px solid #e3ad42;padding:7px 12px;background:var(--shade);font-size:.79rem;color:var(--muted);border-radius:4px 9px 9px 4px}
+hr{height:1px;background:var(--line);border:0;margin:20px 0}.history{display:flex;flex-direction:column;gap:9px;margin-top:12px}.item{border:1px solid var(--line);border-radius:12px;padding:11px 12px}.item small{color:var(--muted)}.ok{color:var(--mint);font-weight:800}.ng{color:var(--red);font-weight:800}.minor{font-size:.79rem;color:var(--muted)}a{color:var(--blue)}footer{padding:4px 3px;color:var(--muted);font-size:.75rem}summary{font-weight:750;cursor:pointer}details{margin-top:12px}.tiny{text-align:center;font-size:.72rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="eyebrow">ES OPEN SIGNAL · MOBILE</div>
+<h1>S&P500 寄り付き予測</h1>
+<p>ES先物の価格を2つ入力するだけ。iPhoneで予測と答え合わせができます。</p>
+</header>
+<section class="card">
+<div class="srow"><h2>① 予測に使う価格</h2><span class="badge safe">計算は端末内</span></div>
+<div class="field"><label for="day">予測対象の米国市場の日付</label><input type="date" id="day"></div>
+<label>利用する価格の種類</label>
+<div class="mode" role="group" aria-label="価格の遅延を選択">
+<button type="button" id="liveButton" aria-pressed="false">リアルタイム</button>
+<button type="button" id="delayButton" aria-pressed="true">無料・10分遅延</button>
+</div>
+<div class="field"><label for="prev">前営業日のES先物価格 <span class="sub">米国東部時間15:55開始の5分足終値（16:00確定）</span></label><input id="prev" type="number" inputmode="decimal" min="0.00001" step="any" placeholder="例：6742.50" autocomplete="off"></div>
+<div class="field"><label for="latest" id="latestLabel">当日のES先物価格 <span class="sub">米国東部時間9:05開始の5分足終値（9:10確定）</span></label><input id="latest" type="number" inputmode="decimal" min="0.00001" step="any" placeholder="例：6673.00" autocomplete="off"></div>
+<div class="notice" id="delayNote">無料の10分遅延を想定。米国東部時間9:20に閲覧するなら、9:10までに確定した価格を入力します。提供元によって遅延時間は異なります。</div>
+<button class="quiet" id="sample" type="button">サンプル価格で試す</button>
+</section>
+<section class="card" aria-live="polite">
+<h2>② 予測結果</h2>
+<div id="result" class="result"><div class="minor">ES先物の変化</div><div id="direction" class="direction">価格を入力してください</div><div id="change" class="metric">—</div><p id="explanation">2つの価格を入れると自動計算します。</p></div>
+<button id="copyButton" class="secondary" type="button" disabled>予測結果をコピー</button>
+</section>
+<section class="card">
+<h2>③ 寄り付き後の答え合わせ（任意）</h2>
+<div class="grid2">
+<div class="field"><label for="spxPrev">S&P500 前日終値</label><input id="spxPrev" type="number" inputmode="decimal" step="any" min="0.00001" placeholder="例：6740.02"></div>
+<div class="field"><label for="spxOpen">S&P500 当日始値</label><input id="spxOpen" type="number" inputmode="decimal" step="any" min="0.00001" placeholder="例：6699.80"></div>
+</div>
+<div class="result" id="actualBox" aria-live="polite"><div class="minor">実際の寄り付き</div><div id="actualResult" class="metric">入力すると正誤を判定します</div></div>
+<button class="primary" id="saveButton" type="button" disabled>この日を履歴に記録</button>
+<p id="saveMsg" class="hint" role="status"></p>
+</section>
+<section class="card">
+<div class="srow"><h2>④ 記録した履歴</h2><span class="badge" id="numSaved">0件</span></div>
+<p class="hint">この端末のブラウザ内だけに保存します。別の端末には自動同期されません。</p>
+<div class="history" id="history"><p class="hint">まだ記録はありません。</p></div>
+<button class="secondary" id="exportButton" type="button">履歴をCSVに保存</button>
+<button class="quiet" id="clearButton" type="button">履歴を全て消去</button>
+</section>
+<section class="card">
+<h2>どこでES先物の価格を確認する？</h2>
+<p class="hint"><a href="https://www.cmegroup.com/markets/equities/sp/e-mini-sandp500.html" target="_blank" rel="noopener noreferrer">CME（E-mini S&P500）</a> ／ <a href="https://finance.yahoo.com/quote/ES=F/" target="_blank" rel="noopener noreferrer">Yahoo Finance（ES=F）</a></p>
+<p class="hint">必ず<strong>表示されている価格の時刻</strong>を確認してください。単なる「現在値」では、今回の時間比較と一致しないことがあります。</p>
+<details><summary>検証結果と注意点</summary>
+<p class="hint">過去の探索的検証では、2026年1月21日〜4月14日の58営業日中、9:20確定価格の方向判断は52日的中（89.7%）、9:10確定価格では51日的中（87.9%）でした。今後も同じ的中率になるとは限りません。</p>
+<p class="hint">ES先物とS&P500指数の寄り付き価格には限月・金利・配当などによる差があります。比較する2価格は同一限月または適切につないだ連続価格を使い、限月切替日に注意してください。</p>
+<p class="hint">米国夏時間の9:20は日本時間22:20、冬時間は23:20。無料価格の遅延は配信元次第で変わります。厳密なライブ価格を自動取得するアプリではありません。</p>
+</details>
+</section>
+<footer><strong>ES Open Signal for iPhone</strong> · オフライン計算対応。外部の解析サーバーに入力値を送信しません。市場価格は自動更新されません。</footer>
+</main>
+<script>
+'use strict';
+(function(){
+ const $=id=>document.getElementById(id);
+ const STORAGE_KEY='es_open_signal_iphone_v1';
+ let mode='delayed';
+ const num=(id)=>{const v=$(id).value.trim();if(!v)return null;const n=Number(v);return Number.isFinite(n)&&n>0?n:null};
+ const fmt=(n,d=2)=>Number(n).toLocaleString('ja-JP',{minimumFractionDigits:d,maximumFractionDigits:d});
+ const dateToday=()=>{const a=new Date();return [a.getFullYear(),String(a.getMonth()+1).padStart(2,'0'),String(a.getDate()).padStart(2,'0')].join('-')};
+ $('day').value=dateToday();
+ function direction(a,b){return b>a?'UP':b<a?'DOWN':'FLAT'}
+ function predict(){
+  const p=num('prev'),c=num('latest');
+  const card=$('result');card.className='result';
+  if(p===null||c===null){$('direction').textContent='価格を入力してください';$('change').textContent='—';$('explanation').textContent='正の数値を2つ入力すると自動計算します。';$('copyButton').disabled=true;$('saveButton').disabled=true;grade();return null}
+  let ret=(c/p-1)*100,dir=direction(p,c);
+  card.classList.add(dir==='UP'?'up':dir==='DOWN'?'down':'');
+  $('direction').textContent=dir==='UP'?'↗ 上昇寄り付きと予測':dir==='DOWN'?'↘ 下落寄り付きと予測':'→ 判定保留';
+  $('change').textContent='ES変化率 '+(ret>=0?'+':'')+fmt(ret,3)+'%';
+  $('explanation').textContent='入力時刻：'+(mode==='delayed'?'9:10確定（10分遅延想定）':'9:20確定（リアルタイム想定）')+'。ES先物の前日16:00との変化方向で予測します。';
+  $('copyButton').disabled=false;$('saveButton').disabled=false;grade();
+  return {dir,ret,p,c,date:$('day').value,mode};
+ }
+ function grade(){
+  const p=num('spxPrev'),c=num('spxOpen'),a=num('prev'),b=num('latest');
+  const box=$('actualBox'),txt=$('actualResult');box.className='result';
+  if(p===null||c===null){txt.textContent='入力すると正誤を判定します';return}
+  const gap=(c/p-1)*100,actual=direction(p,c),pred=a!==null&&b!==null?direction(a,b):null;
+  const name=actual==='UP'?'上昇':actual==='DOWN'?'下落':'横ばい';
+  const result=pred&&pred!=='FLAT'&&actual!=='FLAT'?(pred===actual?' · 的中':' · 不的中'):' · 判定保留';
+  txt.textContent='実際 '+name+' '+(gap>=0?'+':'')+fmt(gap,3)+'%'+(pred?result:'');
+  if(pred&&pred===actual&&pred!=='FLAT')box.classList.add('up');
+  else if(pred&&pred!==actual&&pred!=='FLAT'&&actual!=='FLAT')box.classList.add('down');
+ }
+ function setMode(v){mode=v;$('liveButton').setAttribute('aria-pressed',String(v==='live'));$('delayButton').setAttribute('aria-pressed',String(v==='delayed'));
+  $('latestLabel').innerHTML=v==='live'?'当日のES先物価格 <span class="sub">米国東部時間9:15開始の5分足終値（9:20確定）</span>':'当日のES先物価格 <span class="sub">米国東部時間9:05開始の5分足終値（9:10確定）</span>';
+  $('delayNote').textContent=v==='live'?'リアルタイムの価格を確認できる場合。9:15〜9:20の5分足が確定してから入力してください。':'無料の10分遅延を想定。9:20に閲覧するなら、9:10までに確定した価格を入力します。提供元によって遅延時間は異なります。';predict();}
+ $('liveButton').addEventListener('click',()=>setMode('live'));
+ $('delayButton').addEventListener('click',()=>setMode('delayed'));
+ for(const id of ['prev','latest','spxPrev','spxOpen'])$(id).addEventListener('input',predict);
+ function all(){try{const a=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');return Array.isArray(a)?a:[]}catch(_){return []}}
+ function persist(rows){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(rows));return true}catch(_){$('saveMsg').textContent='ブラウザで保存が禁止されています。CSV保存をご利用ください。';return false}}
+ function escapeHTML(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+ function renderHistory(){const a=all(),root=$('history');$('numSaved').textContent=a.length+'件';root.innerHTML='';if(!a.length){root.innerHTML='<p class="hint">まだ記録はありません。</p>';return}
+  for(const r of a.slice().sort((x,y)=>y.date.localeCompare(x.date))){let box=document.createElement('div');box.className='item';let ok=r.actual&&r.actual!=='FLAT'&&r.prediction!=='FLAT'?r.actual===r.prediction?'<span class="ok">的中</span>':'<span class="ng">不的中</span>':'<span>未採点</span>';
+  box.innerHTML='<div class="srow"><strong>'+escapeHTML(r.date)+'</strong>'+ok+'</div><small>予想：'+(r.prediction==='UP'?'上昇':r.prediction==='DOWN'?'下落':'保留')+' · ES '+(r.es_return>=0?'+':'')+fmt(r.es_return,3)+'%'+(r.spx_gap!==null?' ／ SPX '+(r.spx_gap>=0?'+':'')+fmt(r.spx_gap,3)+'%':'')+'</small>';root.appendChild(box)}
+ }
+ $('sample').addEventListener('click',()=>{$('day').value='2026-03-09';setMode('live');$('prev').value='6742.50';$('latest').value='6678.75';$('spxPrev').value='6740.02';$('spxOpen').value='6699.80';predict();$('saveMsg').textContent='2026年3月9日の検証サンプルです。';});
+ $('copyButton').addEventListener('click',async()=>{const v=predict();if(!v)return;let txt=`ES寄り付き予測 ${v.date}\n${v.mode==='live'?'9:20確定':'9:10確定'}\n前日ES: ${v.p}\n当日ES: ${v.c}\nES変化率: ${v.ret.toFixed(3)}%\n予測: ${v.dir==='UP'?'上昇':v.dir==='DOWN'?'下落':'保留'}`;try{await navigator.clipboard.writeText(txt);$('saveMsg').textContent='予測結果をコピーしました。'}catch(_){let z=document.createElement('textarea');z.value=txt;document.body.appendChild(z);z.select();let ok=document.execCommand('copy');z.remove();$('saveMsg').textContent=ok?'予測結果をコピーしました。':'コピーできない場合は画面を長押しして選択してください。'}});
+ $('saveButton').addEventListener('click',()=>{const v=predict();if(!v||!v.date){$('saveMsg').textContent='予測日とES価格を入力してください。';return}const a=all(),p=num('spxPrev'),c=num('spxOpen'),actual=p&&c?direction(p,c):null;
+ const row={date:v.date,mode:v.mode,es_prev:v.p,es_current:v.c,es_return:v.ret,prediction:v.dir,spx_prev:p,spx_open:c,spx_gap:p&&c?100*(c/p-1):null,actual};const i=a.findIndex(r=>r.date===row.date);if(i>=0)a[i]=row;else a.push(row);if(persist(a)){$('saveMsg').textContent='保存しました（同じ日付は上書き）。';renderHistory()}});
+ $('exportButton').addEventListener('click',()=>{const a=all();if(!a.length){$('saveMsg').textContent='CSVに保存する履歴がありません。';return}
+ const cols=['date','mode','es_prev','es_current','es_return','prediction','spx_prev','spx_open','spx_gap','actual'];
+ const csv='\ufeff'+[cols.join(','),...a.map(r=>cols.map(k=>r[k]===null||r[k]===undefined?'':String(r[k])).join(','))].join('\r\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));let link=document.createElement('a');link.href=url;link.download='ES_予測履歴.csv';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);$('saveMsg').textContent='CSV保存を開始しました。'});
+ $('clearButton').addEventListener('click',()=>{if(confirm('端末内の予測履歴をすべて削除しますか？')){if(persist([])){$('saveMsg').textContent='履歴を削除しました。';renderHistory()}}});
+ predict();renderHistory();
+})();
+</script>
+</body>
+</html>
