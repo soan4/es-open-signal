@@ -37,13 +37,17 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Compute ES direction only before opening
         run: python scripts/update_signal.py
+      - name: Capture ES and NQ comparison before opening
+        run: python scripts/update_shadow.py
       - name: Grade existing saved forecast only after opening
         run: python scripts/verify_open.py
+      - name: Grade ES plus NQ comparison after opening
+        run: python scripts/update_shadow.py
       - name: Save public prediction and verification
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/latest.json data/history.json data/verification.json
+          git add data/latest.json data/history.json data/verification.json data/shadow.json data/shadow_history.json
           if ! git diff --cached --quiet; then
             git commit -m 'Update ES forecast and opening gap verification'
             git push
