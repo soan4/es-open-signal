@@ -17,6 +17,12 @@
     "direction": "up",
     "change_pct": 0.0541,
     "calculated_at_utc": "2026-10-12T13:28:08.319189+00:00",
-    "signal_bar_end_et": "2026-10-12 09:10 ET"
+    "signal_bar_end_et": "2026-10-12 09:10 ET",
+    "previous_close": 7811.54,
+    "spx_open": 7813.04,
+    "actual_direction": "up",
+    "actual_gap_pct": 0.0192,
+    "correct": true,
+    "verified_at_utc": "2026-10-12T22:07:17.539659+00:00"
   }
 ]
