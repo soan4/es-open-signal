@@ -60,6 +60,24 @@ hr{height:1px;background:var(--line);border:0;margin:20px 0}.history{display:fle
 <div class="srow"><strong class="minor">累積的中率（自動採点分）</strong><strong id="autoStats">記録なし</strong></div>
 <button class="secondary" type="button" id="verifyReload">答え合わせを読み直す</button>
 </section>
+<section class="card" id="shadowV2" aria-live="polite">
+<div class="srow"><h2>Ver.2.0 ES＋NQ テスト</h2><span class="badge">並行検証中</span></div>
+<div class="auto-box">
+  <div id="v2Decision" class="auto-head">開始待ち</div>
+  <p id="v2Inputs" class="auto-sub">現行のES予測は変更しません</p>
+  <p id="v2Date" class="auto-sub">次の米国市場寄り付き前から記録</p>
+</div>
+<p class="hint" id="v2Explanation">ESとNQの前日16:00→当日9:10の方向が一致した日だけ予測し、不一致の日は見送ります。</p>
+<div class="grid2">
+<div><div class="minor">実際に予測した日</div><strong id="v2Coverage">—</strong></div>
+<div><div class="minor">採点済みの的中率</div><strong id="v2Accuracy">—</strong></div>
+</div>
+<button class="secondary" type="button" id="v2Reload">Ver.2.0の結果を読み直す</button>
+<details><summary>過去58営業日のテスト結果を見る</summary>
+<p class="hint">無料の10分遅延を想定：ES単独 51/58日（87.9%）。ES＋NQ一致時 48/54日（88.9%）、4日を判定保留。改善はわずかで、継続観察が必要です。9:20確定の価格を即時使える場合はES単独 52/58日（89.7%）、一致時 49/53日（92.5%）。</p>
+<p class="hint">Ver.2.0の的中率は予測した日だけで計算します。見送った日を正解に加えません。価格提供元の時刻・限月の相違にも注意が必要です。</p>
+</details>
+</section>
 <section class="card">
 <div class="srow"><h2>① 予測に使う価格</h2><span class="badge safe">計算は端末内</span></div>
 <div class="field"><label for="day">予測対象の米国市場の日付</label><input type="date" id="day"></div>
@@ -197,6 +215,59 @@ hr{height:1px;background:var(--line);border:0;margin:20px 0}.history{display:fle
  }
  document.getElementById('verifyReload').addEventListener('click',updateVerification);
  updateVerification();
+
+ async function updateShadow(){
+  document.getElementById('v2Explanation').textContent='最新のVer.2.0テスト記録を読み込んでいます…';
+  try{
+   const suffix='?v='+Date.now();
+   const [r,h]=await Promise.all([
+      fetch('./data/shadow.json'+suffix,{cache:'no-store'}),
+      fetch('./data/shadow_history.json'+suffix,{cache:'no-store'})
+   ]);
+   if(!r.ok)throw new Error('HTTP '+r.status);
+   const obj=await r.json();
+   const hist=h.ok?await h.json():[];
+   const root=document.getElementById('v2Decision');
+   root.className='auto-head';
+   if(obj.status==='ready'){
+     const current=obj.date===todayNY();
+     const d=obj.decision;
+     root.textContent=d==='hold'?'判定保留':d==='up'?'上昇予測':d==='down'?'下落予測':'判定保留';
+     root.className='auto-head'+(d==='up'?' up':d==='down'?' down':'');
+     const sign=n=>(Number(n)>=0?'+':'')+Number(n).toFixed(3)+'%';
+     document.getElementById('v2Inputs').textContent='ES '+sign(obj.es_change_pct)+' ／ NQ '+sign(obj.nq_change_pct);
+     document.getElementById('v2Date').textContent=(current?'本日 ':'前回のテスト ')+obj.date+' · 9:10 ET確定値';
+     document.getElementById('v2Explanation').textContent=d==='hold'
+       ?'方向不一致のためVer.2.0では予測を見送ります。ES単独モデルの結果は変更しません。'
+       :'ESとNQの方向一致を確認。実際の始値の取得後に採点します。';
+     if(obj.graded){
+       document.getElementById('v2Explanation').textContent=
+        d==='hold'?'見送りとして記録済み（的中数には含めません）':
+        obj.correct?'答え合わせ：的中':'答え合わせ：不的中';
+     }
+   }else{
+     root.textContent='取得待ち';
+     document.getElementById('v2Inputs').textContent=obj.reason||'次の寄り付き前に自動取得';
+     document.getElementById('v2Date').textContent=obj.date?'対象 '+obj.date:'';
+     document.getElementById('v2Explanation').textContent='現在のES単独予測は変更していません。';
+   }
+   const sample=Array.isArray(hist)?hist.filter(x=>x.status==='ready'):[];
+   const covered=sample.filter(x=>x.decision==='up'||x.decision==='down');
+   const graded=covered.filter(x=>x.graded===true&&(x.correct===true||x.correct===false));
+   const wins=graded.filter(x=>x.correct===true).length;
+   document.getElementById('v2Coverage').textContent=sample.length?
+      covered.length+' / '+sample.length+'日（'+(covered.length/sample.length*100).toFixed(1)+'%）':'記録なし';
+   document.getElementById('v2Accuracy').textContent=graded.length?
+      wins+' / '+graded.length+'日（'+(wins/graded.length*100).toFixed(1)+'%）':'採点待ち';
+  }catch(e){
+   document.getElementById('v2Decision').textContent='読み込み失敗';
+   document.getElementById('v2Inputs').textContent='しばらくしてから更新してください';
+   document.getElementById('v2Explanation').textContent='ES単独モデルは引き続き使用できます。';
+  }
+ }
+ document.getElementById('v2Reload').addEventListener('click',updateShadow);
+ updateShadow();
+
 
 
  const STORAGE_KEY='es_open_signal_iphone_v1';
