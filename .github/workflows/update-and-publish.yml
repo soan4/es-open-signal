@@ -4,11 +4,15 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    # 5-minute spacing; GitHub can still delay or skip scheduled jobs
-    - cron: '19,24,29 9 * * 1-5'
+    # Pre-warm runners well before the market open. Github cron is best effort.
+    # New York clock automatically handles US daylight saving time.
+    - cron: '42,57 8 * * 1-5'
       timezone: 'America/New_York'
-    # Allow delayed publication of the S&P500 index open
-    - cron: '11,26 10 * * 1-5'
+    # Independent fallback dispatches at off-hour minutes.
+    - cron: '12,22,27 9 * * 1-5'
+      timezone: 'America/New_York'
+    # Grade previously recorded predictions after the cash open.
+    - cron: '11,26,46 10 * * 1-5'
       timezone: 'America/New_York'
     - cron: '16 11 * * 1-5'
       timezone: 'America/New_York'
@@ -22,6 +26,7 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 65
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -35,10 +40,8 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - name: Test preopen forecast and verification
         run: python -m unittest discover -s tests -v
-      - name: Compute ES direction only before opening
-        run: python scripts/update_signal.py
-      - name: Capture ES and NQ comparison before opening
-        run: python scripts/update_shadow.py
+      - name: Warm runner and retry ES / NQ until prediction is available
+        run: python -u scripts/collect_with_retry.py
       - name: Grade existing saved forecast only after opening
         run: python scripts/verify_open.py
       - name: Grade ES plus NQ comparison after opening
