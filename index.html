@@ -31,6 +31,26 @@ hr{height:1px;background:var(--line);border:0;margin:20px 0}.history{display:fle
 .auto-head.up{color:var(--mint)}.auto-head.down{color:var(--red)}
 .auto-sub{color:var(--muted);font-size:.81rem}
 
+
+/* Automatic audit scoreboard */
+.audit-steps{display:grid;grid-template-columns:1fr 20px 1fr 20px 1fr;align-items:center;gap:2px;margin:12px 0 16px}
+.audit-step{text-align:center;border-radius:10px;background:var(--shade);padding:8px 2px;font-size:.72rem;font-weight:750;line-height:1.6}
+.audit-arrow{text-align:center;color:var(--muted);font-size:1rem}
+.audit-metric{padding:14px 11px;border:1px solid var(--line);border-radius:13px;background:var(--surface)}
+.audit-metric .num{font-weight:850;font-size:1.55rem;letter-spacing:-.04em}
+.audit-metric .name{font-size:.78rem;font-weight:800}
+.audit-meter{height:13px;display:flex;overflow:hidden;background:var(--shade);border-radius:99px;margin:7px 0}
+.audit-win{background:var(--mint);height:100%;transition:width .2s}
+.audit-miss{background:var(--red);height:100%;transition:width .2s}
+.audit-legend{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted)}
+.audit-row{border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin:9px 0}
+.audit-result{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:7px}
+.audit-pill{background:var(--shade);padding:8px;border-radius:9px;font-size:.78rem}
+.audit-pill strong{display:block}
+.audit-tag{font-size:.74rem;font-weight:800}
+.audit-tag.hit{color:var(--mint)}.audit-tag.miss{color:var(--red)}
+.audit-tag.hold,.audit-tag.pending{color:var(--muted)}
+
 </style>
 </head>
 <body>
@@ -59,6 +79,41 @@ hr{height:1px;background:var(--line);border:0;margin:20px 0}.history{display:fle
 <p class="hint" id="verifyNote">始値が確定して取得できた場合にだけ、保存済みの予測を採点します。原則として米国東部時間10:00以降に照合します。</p>
 <div class="srow"><strong class="minor">累積的中率（自動採点分）</strong><strong id="autoStats">記録なし</strong></div>
 <button class="secondary" type="button" id="verifyReload">答え合わせを読み直す</button>
+</section>
+
+<section class="card" id="autoScoreboard" aria-live="polite">
+<div class="srow"><h2>日別の答え合わせ・自動保存</h2><span class="badge safe">履歴を自動集計</span></div>
+<div class="audit-steps" aria-label="寄り付き前の予測を保存、始値と照合、結果を記録">
+  <div class="audit-step">①予測<br>保存</div><div class="audit-arrow">→</div>
+  <div class="audit-step">②始値と<br>比較</div><div class="audit-arrow">→</div>
+  <div class="audit-step">③的中率<br>集計</div>
+</div>
+<div class="grid2">
+  <div class="audit-metric">
+    <div class="name">ES単独（Ver.1）</div>
+    <div id="auditES" class="num">—</div>
+    <div id="auditESCount" class="minor">集計待ち</div>
+    <div class="audit-meter" role="img" aria-label="ES的中と不的中の割合">
+      <div id="auditESHit" class="audit-win"></div><div id="auditESMiss" class="audit-miss"></div>
+    </div>
+  </div>
+  <div class="audit-metric">
+    <div class="name">ES＋NQ（Ver.2）</div>
+    <div id="auditNQ" class="num">—</div>
+    <div id="auditNQCount" class="minor">集計待ち</div>
+    <div class="audit-meter" role="img" aria-label="ES＋NQ的中と不的中の割合">
+      <div id="auditNQHit" class="audit-win"></div><div id="auditNQMiss" class="audit-miss"></div>
+    </div>
+  </div>
+</div>
+<div class="audit-legend"><span>■ 的中</span><span>■ 不的中</span></div>
+<p class="hint" id="auditCoverage">的中率は「予測し、かつ実際の始値で採点できた日」だけで計算します。</p>
+<hr>
+<div class="srow"><h2>日別の結果</h2><span class="badge" id="auditDays">0日</span></div>
+<div id="auditHistory" class="history"><p class="hint">保存済みのデータを読み込み中…</p></div>
+<button type="button" class="secondary" id="auditRefresh">結果をまとめて更新</button>
+<button type="button" class="quiet" id="auditCsv" disabled>自動保存された結果をCSVで書き出す</button>
+<p class="hint" id="auditSync">データはGitHubに自動保存され、iPhoneで表示します。手入力の履歴とは別です。未取得の日を後から予測したことにはしません。</p>
 </section>
 <section class="card" id="shadowV2" aria-live="polite">
 <div class="srow"><h2>Ver.2.0 ES＋NQ テスト</h2><span class="badge">並行検証中</span></div>
@@ -267,6 +322,100 @@ hr{height:1px;background:var(--line);border:0;margin:20px 0}.history{display:fle
  }
  document.getElementById('v2Reload').addEventListener('click',updateShadow);
  updateShadow();
+
+ let auditedRows=[];
+ function dirLabel(d){
+   return d==='up'?'↑ 上昇':d==='down'?'↓ 下落':d==='flat'?'→ 横ばい':'—';
+ }
+ function outcomeLabel(s){
+   return s==='hit'?'的中':s==='miss'?'不的中':s==='hold'?'見送り':
+          s==='pending'?'採点待ち':'予測なし';
+ }
+ function renderMetric(prefix,stats){
+   const count=stats&&Number(stats.scored)||0;
+   const wins=stats&&Number(stats.correct)||0;
+   document.getElementById(prefix).textContent=count?(wins/count*100).toFixed(1)+'%':'—';
+   document.getElementById(prefix+'Count').textContent=count?wins+' / '+count+'日 的中':'採点済み予測なし';
+   document.getElementById(prefix+'Hit').style.width=count?100*wins/count+'%':'0%';
+   document.getElementById(prefix+'Miss').style.width=count?100*(count-wins)/count+'%':'0%';
+ }
+ function addText(element,cls,value){
+   const node=document.createElement(element);
+   if(cls)node.className=cls;
+   node.textContent=value;
+   return node;
+ }
+ function renderDay(rec){
+   const row=addText('div','audit-row','');
+   const headline=addText('div','srow','');
+   headline.appendChild(addText('strong','',String(rec.date)));
+   const change=Number(rec.spx_gap_pct);
+   const actual=(rec.actual_direction&&Number.isFinite(change))
+       ?'S&P500実際 '+dirLabel(rec.actual_direction)+' '+(change>=0?'+':'')+change.toFixed(3)+'%'
+       :'S&P500 始値取得待ち';
+   headline.appendChild(addText('small','minor',actual));
+   row.appendChild(headline);
+   const grid=addText('div','audit-result','');
+   for(const [name,forecast,status] of [
+     ['ES単独',rec.es_direction,rec.v1_status],
+     ['ES＋NQ',rec.v2_decision,rec.v2_status]
+   ]){
+     const cell=addText('div','audit-pill','');
+     cell.appendChild(addText('span','minor',name));
+     cell.appendChild(addText('strong','',forecast==='hold'?'見送り':dirLabel(forecast)));
+     cell.appendChild(addText('span','audit-tag '+String(status),outcomeLabel(status)));
+     grid.appendChild(cell);
+   }
+   row.appendChild(grid);
+   return row;
+ }
+ async function updateDashboard(){
+   const root=document.getElementById('auditHistory');
+   try{
+     const res=await fetch('./data/dashboard.json?v='+Date.now(),{cache:'no-store'});
+     if(!res.ok)throw new Error('dashboard '+res.status);
+     const summary=await res.json();
+     renderMetric('auditES',summary.es);
+     renderMetric('auditNQ',summary.es_nq);
+     const a=summary.es||{},b=summary.es_nq||{};
+     document.getElementById('auditCoverage').textContent=
+       'ES：採点待ち '+(a.pending||0)+'日 ／ ES＋NQ：判定保留 '+(b.holds||0)+
+       '日・採点待ち '+(b.pending||0)+'日。見送りは的中数に含みません。'+
+       ((a.scored||0)<30?' 集計件数がまだ少ないため、的中率は参考値です。':'');
+     auditedRows=Array.isArray(summary.timeline)?summary.timeline:[];
+     document.getElementById('auditDays').textContent=auditedRows.length+'日';
+     root.replaceChildren();
+     if(!auditedRows.length)root.appendChild(addText('p','hint','寄り付き前の予測が保存されると、ここに結果が追加されます。'));
+     for(const day of auditedRows.slice(0,20)){
+       root.appendChild(renderDay(day));
+     }
+     document.getElementById('auditCsv').disabled=!auditedRows.length;
+     document.getElementById('auditSync').textContent=
+       'GitHubに自動保存された'+auditedRows.length+
+       '日分の記録を表示中。ブラウザの手動入力履歴とは別です。';
+   }catch(e){
+     root.replaceChildren(addText('p','hint','集計データを読み込めません。少し待って更新してください。'));
+     document.getElementById('auditSync').textContent='予測記録は消去されていません。GitHubの再公開を確認してください。';
+   }
+ }
+ document.getElementById('auditRefresh').addEventListener('click',()=>{
+   updateForecast(); updateVerification(); updateShadow(); updateDashboard();
+ });
+ document.getElementById('auditCsv').addEventListener('click',()=>{
+   if(!auditedRows.length)return;
+   const cols=['date','es_direction','es_change_pct','nq_direction','nq_change_pct',
+     'v2_decision','spx_previous_close','spx_open','spx_gap_pct',
+     'actual_direction','v1_status','v2_status'];
+   const cell=v=>'"'+String(v===undefined||v===null?'':v).replace(/"/g,'""')+'"';
+   const csv='\ufeff'+[cols.join(','),...auditedRows.map(r=>cols.map(k=>cell(r[k])).join(','))].join('\r\n');
+   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+   const link=document.createElement('a');
+   link.href=url;link.download='SP500_自動答え合わせ.csv';
+   document.body.appendChild(link);link.click();link.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),3000);
+ });
+ updateDashboard();
+
 
 
 
