@@ -1,13 +1,13 @@
 {
-  "date": "2026-10-12",
-  "calculated_at_utc": "2026-10-12T13:28:08.319189+00:00",
+  "date": "2026-10-13",
+  "calculated_at_utc": "2026-10-13T13:28:29.302822+00:00",
   "model": "ES_overnight_direction_5m_delayed_v1",
   "source": "Yahoo Finance delayed",
   "status": "ready",
-  "direction": "up",
-  "change_pct": 0.0541,
-  "previous_session": "2026-10-09",
-  "base_bar_end_et": "2026-10-09 16:00 ET",
-  "signal_bar_end_et": "2026-10-12 09:10 ET",
+  "direction": "down",
+  "change_pct": -0.0891,
+  "previous_session": "2026-10-12",
+  "base_bar_end_et": "2026-10-12 16:00 ET",
+  "signal_bar_end_et": "2026-10-13 09:10 ET",
   "issue_warning": "連続先物の限月切替や無料価格の遅延に注意"
 }

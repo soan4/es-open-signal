@@ -1,29 +1,45 @@
 {
   "schema_version": 1,
-  "created_at_utc": "2026-10-13T07:03:34.437070+00:00",
+  "created_at_utc": "2026-10-13T13:28:29.994482+00:00",
   "source": "GitHub archived before-open predictions + delayed Yahoo Finance ^GSPC",
   "notes": "Missed pre-open runs are never filled retrospectively. Non-prediction holds are not counted as hits.",
   "es": {
-    "predictions": 2,
+    "predictions": 3,
     "scored": 2,
     "correct": 2,
     "incorrect": 0,
-    "pending": 0,
+    "pending": 1,
     "accuracy_pct": 100.0,
     "holds": 0,
-    "recorded": 2
+    "recorded": 3
   },
   "es_nq": {
-    "predictions": 0,
+    "predictions": 1,
     "scored": 0,
     "correct": 0,
     "incorrect": 0,
-    "pending": 0,
+    "pending": 1,
     "accuracy_pct": null,
     "holds": 1,
-    "recorded": 1
+    "recorded": 2
   },
   "timeline": [
+    {
+      "date": "2026-10-13",
+      "es_direction": "down",
+      "es_change_pct": -0.0891,
+      "es_predicted_at_utc": "2026-10-13T13:28:29.302822+00:00",
+      "nq_direction": "down",
+      "nq_change_pct": -0.8011,
+      "v2_decision": "down",
+      "spx_previous_close": null,
+      "spx_open": null,
+      "spx_gap_pct": null,
+      "actual_direction": null,
+      "v1_status": "pending",
+      "v2_status": "pending",
+      "v2_graded": false
+    },
     {
       "date": "2026-10-12",
       "es_direction": "up",

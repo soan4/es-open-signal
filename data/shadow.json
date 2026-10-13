@@ -1,18 +1,14 @@
 {
-  "date": "2026-10-12",
+  "date": "2026-10-13",
   "model": "ES_NQ_agreement_delayed_v2",
   "status": "ready",
   "source": "Yahoo Finance NQ=F delayed",
-  "decision": "hold",
-  "agreement": false,
-  "es_direction": "up",
+  "decision": "down",
+  "agreement": true,
+  "es_direction": "down",
   "nq_direction": "down",
-  "es_change_pct": 0.0541,
-  "nq_change_pct": -0.1101,
-  "calculated_at_utc": "2026-10-12T13:28:08.721990+00:00",
-  "signal_bar_end_et": "2026-10-12 09:10 ET",
-  "graded": true,
-  "actual_direction": "up",
-  "actual_gap_pct": 0.0192,
-  "correct": null
+  "es_change_pct": -0.0891,
+  "nq_change_pct": -0.8011,
+  "calculated_at_utc": "2026-10-13T13:28:29.516633+00:00",
+  "signal_bar_end_et": "2026-10-13 09:10 ET"
 }
