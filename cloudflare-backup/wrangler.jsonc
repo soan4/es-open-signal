@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler.json",
+  "name": "es-open-signal-backup",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-10-13",
+  "workers_dev": true,
+  "triggers": {
+    "crons": [
+      "*/5 13-16 * * 1-5",
+      "15 20-22 * * 1-5",
+      "15 13-16 * * 6"
+    ]
+  }
+}
