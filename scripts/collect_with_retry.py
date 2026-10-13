@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Best-effort pre-open collector with prewarming + repeated retrieval.
 
-On scheduled early runs, wait for 09:18 America/New_York, then retry ES and NQ
+On scheduled or external workflow_dispatch early runs, wait for 09:18 America/New_York, then retry ES and NQ
 until both are saved or NYSE 09:29:15. This reduces dependence on GitHub's
 exact dispatch minute; it does not guarantee GitHub will dispatch the job.
 Never generate a retrospective prediction after market opening.
@@ -30,7 +30,7 @@ def allowed_to_wait(local, event):
         return False
     t=local.time().replace(tzinfo=None)
     # Never hold a runner open for non-scheduled pushes / manual runs early in day.
-    return event=="schedule" and time(8,30)<=t<time(9,18)
+    return event in ("schedule","workflow_dispatch") and time(8,30)<=t<time(9,18)
 
 def collect(event="push", get_now=clock_et, wait=sleeplib.sleep,
             collect_es=es_main, collect_shadow=shadow_main,
