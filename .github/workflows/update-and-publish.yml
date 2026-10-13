@@ -71,7 +71,23 @@ jobs:
           git add data/latest.json data/history.json data/verification.json data/shadow.json data/shadow_history.json data/dashboard.json data/daily_results.csv
           if ! git diff --cached --quiet; then
             git commit -m 'Update ES forecast and opening gap verification'
-            git push
+            for attempt in 1 2 3; do
+              git fetch origin main
+              if ! git rebase origin/main; then
+                git rebase --abort
+                echo 'Conflict while replaying daily results. Preserve results in logs and retry later.'
+                exit 1
+              fi
+              if git push origin HEAD:main; then
+                echo 'Daily archive uploaded successfully'
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo 'GitHub refused all 3 push attempts'
+                exit 1
+              fi
+              sleep 3
+            done
           fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
