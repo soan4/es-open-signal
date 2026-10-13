@@ -1,14 +1,14 @@
 {
-  "date": "2026-10-12",
+  "date": "2026-10-13",
   "status": "verified",
   "model": "ES_overnight_direction_5m_delayed_v1",
-  "signal_direction": "up",
+  "signal_direction": "down",
   "source": "Yahoo Finance ^GSPC daily OHLC (unofficial, delayed)",
-  "previous_session": "2026-10-09",
-  "previous_close": 7811.54,
-  "spx_open": 7813.04,
-  "actual_direction": "up",
-  "actual_gap_pct": 0.0192,
+  "previous_session": "2026-10-12",
+  "previous_close": 7807.2402,
+  "spx_open": 7795.27,
+  "actual_direction": "down",
+  "actual_gap_pct": -0.15332,
   "correct": true,
-  "verified_at_utc": "2026-10-12T22:07:17.539659+00:00"
+  "verified_at_utc": "2026-10-13T19:31:15.012213+00:00"
 }
