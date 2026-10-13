@@ -56,6 +56,10 @@ jobs:
         run: python scripts/update_shadow.py
       - name: Reconcile all previously archived predictions and refresh visual report
         run: python scripts/reconcile_history.py
+      - name: Test external Cloudflare backup scheduler
+        run: |
+          node --check cloudflare-backup/src/index.mjs
+          node --test tests/test_backup_scheduler.mjs
       - name: Validate iPhone dashboard JavaScript syntax
         run: |
           python -c 'from pathlib import Path; html=Path("index.html").read_text(); Path("/tmp/es_app.js").write_text(html.split("<script>")[-1].split("</script>")[0])'
