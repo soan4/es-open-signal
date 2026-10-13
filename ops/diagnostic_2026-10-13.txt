@@ -1,0 +1,1 @@
+2026-10-13 09:27 ET diagnostic trigger: GitHub schedule not fired before open; no forecast invented retrospectively.
