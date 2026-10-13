@@ -16,6 +16,14 @@ on:
       timezone: 'America/New_York'
     - cron: '16 11 * * 1-5'
       timezone: 'America/New_York'
+    # Late data corrections / retry after the regular US trading day
+    - cron: '17 16 * * 1-5'
+      timezone: 'America/New_York'
+    - cron: '13 18 * * 1-5'
+      timezone: 'America/New_York'
+    # Saturday catches up if Friday reconciliation was delayed or skipped
+    - cron: '17 9 * * 6'
+      timezone: 'America/New_York'
 permissions:
   contents: write
   pages: write
@@ -46,11 +54,17 @@ jobs:
         run: python scripts/verify_open.py
       - name: Grade ES plus NQ comparison after opening
         run: python scripts/update_shadow.py
+      - name: Reconcile all previously archived predictions and refresh visual report
+        run: python scripts/reconcile_history.py
+      - name: Validate iPhone dashboard JavaScript syntax
+        run: |
+          python -c 'from pathlib import Path; html=Path("index.html").read_text(); Path("/tmp/es_app.js").write_text(html.split("<script>")[-1].split("</script>")[0])'
+          node --check /tmp/es_app.js
       - name: Save public prediction and verification
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/latest.json data/history.json data/verification.json data/shadow.json data/shadow_history.json
+          git add data/latest.json data/history.json data/verification.json data/shadow.json data/shadow_history.json data/dashboard.json data/daily_results.csv
           if ! git diff --cached --quiet; then
             git commit -m 'Update ES forecast and opening gap verification'
             git push
