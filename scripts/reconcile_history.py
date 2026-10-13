@@ -5,6 +5,8 @@ Forecasts must already exist in history.json / shadow_history.json. This module
 never reconstructs missed forecasts after 09:30 ET. If scheduled grading fails,
 a later run can grade older, genuinely archived predictions from daily SPX OHLC.
 """
+import csv
+import io
 import json
 import math
 import sys
@@ -21,6 +23,7 @@ from verify_open import daily_ohlc
 ES_HISTORY=ROOT/"data/history.json"
 NQ_HISTORY=ROOT/"data/shadow_history.json"
 DASHBOARD=ROOT/"data/dashboard.json"
+DAILY_CSV=ROOT/"data/daily_results.csv"
 LATEST_VERIFICATION=ROOT/"data/verification.json"
 
 def load(path, default):
@@ -163,6 +166,27 @@ def build_dashboard(es, shadow, now):
         "timeline":timeline
     }
 
+def export_daily_csv(dashboard):
+    """Auto-write CSV from frozen pre-market records and verified daily opens."""
+    columns=[
+        ("date","日付"),("es_direction","ES予測"),("es_change_pct","ES変化率%"),
+        ("nq_direction","NQ方向"),("nq_change_pct","NQ変化率%"),
+        ("v2_decision","ES＋NQ予測"),("spx_previous_close","S&P500前日終値"),
+        ("spx_open","S&P500当日始値"),("spx_gap_pct","寄り付き変化率%"),
+        ("actual_direction","実際の方向"),("v1_status","ES単独判定"),
+        ("v2_status","ES＋NQ判定")]
+    out=io.StringIO()
+    writer=csv.writer(out,lineterminator="\\n")
+    writer.writerow([label for _,label in columns])
+    for record in dashboard["timeline"]:
+        writer.writerow([record.get(field) if record.get(field) is not None else ""
+                         for field,_ in columns])
+    content="\\ufeff"+out.getvalue()
+    if DAILY_CSV.exists() and DAILY_CSV.read_text(encoding="utf-8-sig")==out.getvalue():
+        return False
+    DAILY_CSV.write_text(content,encoding="utf-8")
+    return True
+
 def main():
     now=datetime.now(timezone.utc)
     es=load(ES_HISTORY,[])
@@ -179,6 +203,7 @@ def main():
         print("Historical SPX unavailable, keep existing archive:",type(err).__name__,str(err)[:120])
     dashboard=build_dashboard(es,shadow,now)
     save(DASHBOARD,dashboard)
+    export_daily_csv(dashboard)
     print("Dashboard: ES",dashboard["es"]["scored"],"verified; NQ",
           dashboard["es_nq"]["scored"],"verified; timeline",len(dashboard["timeline"]))
     return 0
