@@ -176,12 +176,12 @@ def export_daily_csv(dashboard):
         ("actual_direction","実際の方向"),("v1_status","ES単独判定"),
         ("v2_status","ES＋NQ判定")]
     out=io.StringIO()
-    writer=csv.writer(out,lineterminator="\\n")
+    writer=csv.writer(out,lineterminator="\n")
     writer.writerow([label for _,label in columns])
     for record in dashboard["timeline"]:
         writer.writerow([record.get(field) if record.get(field) is not None else ""
                          for field,_ in columns])
-    content="\\ufeff"+out.getvalue()
+    content="\ufeff"+out.getvalue()
     if DAILY_CSV.exists() and DAILY_CSV.read_text(encoding="utf-8-sig")==out.getvalue():
         return False
     DAILY_CSV.write_text(content,encoding="utf-8")
