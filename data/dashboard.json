@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "created_at_utc": "2026-11-11T22:43:07.879834+00:00",
+  "created_at_utc": "2026-11-12T02:16:05.520926+00:00",
   "source": "GitHub archived before-open predictions + delayed Yahoo Finance ^GSPC",
   "notes": "Missed pre-open runs are never filled retrospectively. Non-prediction holds are not counted as hits.",
   "es": {
